@@ -23,7 +23,9 @@ class Order {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  @ManyToMany(() => Product, product => product.order_products)
+  @ManyToMany(() => Product, product => product.order_products, {
+    cascade: true,
+  })
   @JoinTable()
   order_products: OrdersProducts[];
 

@@ -18,10 +18,10 @@ class Product {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ precision: 8, scale: 2 })
   price: number;
 
-  @Column()
+  @Column({ unsigned: true })
   quantity: number;
 
   @ManyToOne(() => Product, product => product.order_products)

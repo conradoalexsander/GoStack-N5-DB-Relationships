@@ -51,8 +51,11 @@ class ProductsRepository implements IProductsRepository {
     products: IUpdateProductsQuantityDTO[],
   ): Promise<Product[]> {
     // TODO
+
     products.forEach(product => {
-      this.ormRepository.update(product.id, product);
+      this.ormRepository.update(product.id, {
+        quantity: -product.quantity,
+      });
     });
 
     const productsIds: IFindProducts[] = products.map(product => ({
