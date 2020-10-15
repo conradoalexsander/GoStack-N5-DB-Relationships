@@ -1,4 +1,4 @@
-import { getRepository, Repository, Any } from 'typeorm';
+import { getRepository, Repository } from 'typeorm';
 
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
@@ -38,9 +38,7 @@ class ProductsRepository implements IProductsRepository {
     let foundProducts: Product[] = [];
     if (products.length > 0) {
       foundProducts = await this.ormRepository.find({
-        where: {
-          id: Any(products),
-        },
+        where: products,
       });
     }
 
@@ -54,7 +52,7 @@ class ProductsRepository implements IProductsRepository {
 
     products.forEach(product => {
       this.ormRepository.update(product.id, {
-        quantity: -product.quantity,
+        quantity: product.quantity,
       });
     });
 

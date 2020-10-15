@@ -22,15 +22,13 @@ export default class CreateProductsTable1602361870110
           {
             name: 'price',
             type: 'decimal',
-            precision: 8,
+            precision: 10,
             scale: 2,
             isNullable: false,
           },
           {
             name: 'quantity',
             type: 'int',
-            isNullable: true,
-            unsigned: true,
           },
           {
             name: 'created_at',

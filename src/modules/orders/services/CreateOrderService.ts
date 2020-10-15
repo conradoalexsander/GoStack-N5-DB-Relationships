@@ -4,6 +4,7 @@ import AppError from '@shared/errors/AppError';
 
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICustomersRepository from '@modules/customers/repositories/ICustomersRepository';
+import Product from '@modules/products/infra/typeorm/entities/Product';
 import Order from '../infra/typeorm/entities/Order';
 import IOrdersRepository from '../repositories/IOrdersRepository';
 
@@ -33,7 +34,7 @@ class CreateOrderService {
     @inject('OrdersRepository')
     private ordersRepository: IOrdersRepository,
 
-    @inject('ProductssRepository')
+    @inject('ProductsRepository')
     private productsRepository: IProductsRepository,
 
     @inject('CustomersRepository')
@@ -42,39 +43,69 @@ class CreateOrderService {
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
     // TODO
+
+    const customer = await this.customersRepository.findById(customer_id);
+
+    if (!customer) {
+      throw new AppError('No customer with the provided id could be found.');
+    }
+
     const productsIds: IFindProducts[] = products.map(product => ({
       id: product.id,
     }));
 
     const productsData = await this.productsRepository.findAllById(productsIds);
 
-    const customer = await this.customersRepository.findById(customer_id);
+    products.forEach(product => {
+      const indexChecker = productsData.findIndex(i => i.id === product.id);
+      if (indexChecker < 0) {
+        throw new AppError(
+          `no products could be found for product with id ${product.id}`,
+          400,
+        );
+      }
+    });
 
     const orderProducts: ICreateOrderProduct[] = [];
 
-    if (!customer) {
-      throw new AppError('No customer with the provided id could be found.');
-    }
+    const updatedProductsData = productsData.map(productData => {
+      const productIndex = products.findIndex(i => i.id === productData.id);
 
-    productsData.forEach(product => {
-      const { id, price } = product;
-
-      const productIndex = products.findIndex(i => i.id === product.id);
-
-      if (product.quantity < products[productIndex].quantity) {
-        throw new AppError(`Insufficient quanitty for product ${product.name}`);
+      if (productData.quantity < products[productIndex].quantity) {
+        throw new AppError(
+          `Insufficient quantity for product ${productData.name}`,
+        );
       }
 
-      const addProduct: ICreateOrderProduct = {
+      const {
+        id,
+        name,
+        price,
+        created_at,
+        updated_at,
+        order_products,
+      } = productData;
+
+      const updatedProduct: Product = {
+        id,
+        name,
+        price,
+        quantity: productData.quantity - products[productIndex].quantity,
+        created_at,
+        updated_at,
+        order_products,
+      };
+
+      orderProducts.push({
         product_id: id,
         price,
         quantity: products[productIndex].quantity,
-      };
+      });
 
-      orderProducts.push(addProduct);
+      return updatedProduct;
     });
 
-    await this.productsRepository.updateQuantity(products);
+    await this.productsRepository.updateQuantity(updatedProductsData);
 
     const order = this.ordersRepository.create({
       customer,
